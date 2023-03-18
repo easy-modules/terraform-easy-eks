@@ -5,6 +5,7 @@ locals {
   cluster_oidc_issuer_arn_sts = "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${data.aws_caller_identity.current.account_id}/${data.aws_iam_session_context.current.session_name}"
 }
 
+
 ## Requirements
 
 | Name | Version |
