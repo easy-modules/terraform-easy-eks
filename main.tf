@@ -326,7 +326,7 @@ resource "aws_iam_role_policy_attachment" "this" {
 
 resource "aws_iam_role_policy_attachment" "additional" {
   for_each   = { for key, value in var.iam_role_additional_policies : key => value if local.create_iam_role }
-  policy_Arn = each.value
+  policy_arn = each.value
   role       = aws_iam_role.this[0].name
 }
 
@@ -339,7 +339,7 @@ resource "aws_iam_role_policy_attachment" "cluster_encryption" {
   role       = aws_iam_role.this[0].name
 }
 
-// TODO: understand why this is needed
+
 resource "aws_iam_policy" "cluster_encryption" {
   # Encryption config not available on Outposts
   count = local.create_iam_role && var.attach_cluster_encryption_policy && local.enable_cluster_encryption_config ? 1 : 0
@@ -393,7 +393,7 @@ resource "aws_eks_addon" "this" {
   }
 
   depends_on = [
-    modules.fargate_profile,
+    module.fargate_profile,
     module.eks_managed_node_group,
     module.self_managed_node_group,
   ]
@@ -437,7 +437,7 @@ data "aws_eks_addon_version" "this" {
 # EKS Identity Provider
 # Note - this is different from IRSA
 ################################################################################
-// TODO: understand why this is needed
+
 resource "aws_eks_identity_provider_config" "this" {
   for_each = {
     for key, value in var.cluster_identity_providers : key => value if local.create && !local.create_outposts_local_cluster
@@ -490,7 +490,7 @@ locals {
   )
   aws_auth_configmap_data = {
     mapRoles = yamlencode(concat(
-      [for role_arn in local.node_iam_role_arns_non_windows : {
+      [for role_arn in local.node_iam_role_arns_non_windowns : {
         rolearn  = role_arn
         username = "system:node:{{EC2PrivateDNSName}}"
         groups = [
@@ -561,5 +561,3 @@ resource "kubernetes_config_map_v1_data" "aws_auth" {
     kubernetes_config_map.aws_auth,
   ]
 }
-
-
