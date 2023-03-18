@@ -127,7 +127,6 @@ module "eks" {
   }
 }
 ```
-
 ## Requirements
 
 | Name | Version |
