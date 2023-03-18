@@ -36,11 +36,32 @@ locals {
 resource "aws_launch_template" "this" {
   count = var.create && var.create_launch_template && var.use_custom_launch_template ? 1 : 0
 
+  name_prefix             = var.launch_template_use_name_prefix ? "${local.launch_template_name}-" : null
+  name                    = var.launch_template_use_name_prefix ? null : local.launch_template_name
+  description             = var.launch_template_description
+  default_version         = var.launch_template_default_version
+  disable_api_termination = var.disable_api_termination
+  ebs_optimized           = var.ebs_optimized
+  key_name                = var.key_name
+  image_id                = var.ami_id
+  # Set on node group instead
+  # instance_type = var.launch_template_instance_type
+  kernel_id   = var.kernel_id
+  ram_disk_id = var.ram_disk_id
+
+  vpc_security_group_ids = length(var.network_interfaces) > 0 ? [] : local.security_group_ids
+  update_default_version = var.update_launch_template_default_version
+  user_data              = module.user_data.user_data
+
+  tags = var.tags
+
   dynamic "block_device_mappings" {
     for_each = var.block_device_mappings
 
     content {
-      device_name = try(block_device_mappings.value.device_name, null)
+      device_name  = try(block_device_mappings.value.device_name, null)
+      no_device    = try(block_device_mappings.value.no_device, null)
+      virtual_name = try(block_device_mappings.value.virtual_name, null)
 
       dynamic "ebs" {
         for_each = try([block_device_mappings.value.ebs], [])
@@ -56,9 +77,6 @@ resource "aws_launch_template" "this" {
           volume_type           = try(ebs.value.volume_type, null)
         }
       }
-
-      no_device    = try(block_device_mappings.value.no_device, null)
-      virtual_name = try(block_device_mappings.value.virtual_name, null)
     }
   }
 
@@ -95,11 +113,6 @@ resource "aws_launch_template" "this" {
       cpu_credits = try(credit_specification.value.cpu_credits, null)
     }
   }
-
-  default_version         = var.launch_template_default_version
-  description             = var.launch_template_description
-  disable_api_termination = var.disable_api_termination
-  ebs_optimized           = var.ebs_optimized
 
   dynamic "elastic_gpu_specifications" {
     for_each = var.elastic_gpu_specifications
@@ -145,7 +158,6 @@ resource "aws_launch_template" "this" {
   #   }
   # }
 
-  image_id = var.ami_id
   # Set on EKS managed node group, will fail if set here
   # https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html#launch-template-basics
   # instance_initiated_shutdown_behavior = var.instance_initiated_shutdown_behavior
@@ -169,11 +181,6 @@ resource "aws_launch_template" "this" {
       }
     }
   }
-
-  # # Set on node group instead
-  # instance_type = var.launch_template_instance_type
-  kernel_id = var.kernel_id
-  key_name  = var.key_name
 
   dynamic "license_specification" {
     for_each = length(var.license_specifications) > 0 ? var.license_specifications : {}
@@ -210,9 +217,6 @@ resource "aws_launch_template" "this" {
       enabled = var.enable_monitoring
     }
   }
-
-  name        = var.launch_template_use_name_prefix ? null : local.launch_template_name
-  name_prefix = var.launch_template_use_name_prefix ? "${local.launch_template_name}-" : null
 
   dynamic "network_interfaces" {
     for_each = var.network_interfaces
@@ -267,8 +271,6 @@ resource "aws_launch_template" "this" {
     }
   }
 
-  ram_disk_id = var.ram_disk_id
-
   dynamic "tag_specifications" {
     for_each = toset(var.tag_specifications)
 
@@ -277,12 +279,6 @@ resource "aws_launch_template" "this" {
       tags          = merge(var.tags, { Name = var.name }, var.launch_template_tags)
     }
   }
-
-  update_default_version = var.update_launch_template_default_version
-  user_data              = module.user_data.user_data
-  vpc_security_group_ids = length(var.network_interfaces) > 0 ? [] : local.security_group_ids
-
-  tags = var.tags
 
   # Prevent premature access of policies by pods that
   # require permissions on create/destroy that depend on nodes
