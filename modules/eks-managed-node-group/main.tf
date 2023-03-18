@@ -46,6 +46,7 @@ resource "aws_launch_template" "this" {
   image_id                = var.ami_id
   # Set on node group instead
   # instance_type = var.launch_template_instance_type
+  # spot_price    = var.launch_template_spot_price
   kernel_id   = var.kernel_id
   ram_disk_id = var.ram_disk_id
 
